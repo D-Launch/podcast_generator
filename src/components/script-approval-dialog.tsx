@@ -214,15 +214,13 @@ export function ScriptApprovalDialog({
         </h2>
       </div>
       
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+      <div>
         {!currentScriptLinks?.episode_interview_script_1 && 
          !currentScriptLinks?.episode_interview_script_2 && 
          !currentScriptLinks?.episode_interview_script_3 && 
          !currentScriptLinks?.episode_interview_script_4 ? (
-          <div className="text-center py-4">
-            <p className="text-gray-500 dark:text-gray-400">
-              
-            </p>
+          <div >
+
           </div>
         ) : (
           <div className="space-y-3">
