@@ -27,6 +27,9 @@ export function ScriptStatusDisplay({
     } else if (status === "Completed") {
       bgColor = "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100";
       icon = <CheckCircle className="w-3 h-3 mr-1" />;
+    } else if (status === "Ready to Publish") {
+      bgColor = "bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100";
+      icon = <Music className="w-3 h-3 mr-1" />;
     } else if (status === "Failed") {
       bgColor = "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100";
       icon = <AlertCircle className="w-3 h-3 mr-1" />;

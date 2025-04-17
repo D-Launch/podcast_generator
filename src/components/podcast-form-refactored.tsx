@@ -12,6 +12,9 @@ import { supabase } from "@/lib/supabase";
 import { useScriptLinks, isValidScriptLink } from "@/hooks/useScriptLinks";
 import { useScriptStatus } from "@/hooks/useScriptStatus";
 import { useEpisodeSubmission, FormValues } from "@/hooks/useEpisodeSubmission";
+import { useTextFilesGeneration } from "@/hooks/useTextFilesGeneration";
+import { useEpisodeAssetsGeneration } from "@/hooks/useEpisodeAssetsGeneration";
+import { usePodbeanPublishing } from "@/hooks/usePodbeanPublishing";
 
 // Import components
 import { EpisodeHeader } from "@/components/EpisodeHeader";
@@ -21,6 +24,9 @@ import { PdfFileUpload } from "@/components/PdfFileUpload";
 import { ScriptStatusDisplay } from "@/components/ScriptStatusDisplay";
 import { ScriptLinksList } from "@/components/ScriptLinksList";
 import { AudioGenerationButton } from "@/components/AudioGenerationButton";
+import { TextFilesSection } from "@/components/TextFilesSection";
+import { EpisodeAssetsSection } from "@/components/EpisodeAssetsSection";
+import { PodbeanPublishingSection } from "@/components/PodbeanPublishingSection";
 
 const formSchema = z.object({
   episodeName: z.string().min(3, {
@@ -98,6 +104,26 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
     submitFormData,
     cleanupResources
   } = useEpisodeSubmission();
+
+  // New hooks for the additional sections
+  const {
+    isGeneratingTextFiles,
+    textFileLinks,
+    generateTextFiles,
+    updateTextFileLinks
+  } = useTextFilesGeneration();
+
+  const {
+    isGeneratingAssets,
+    assetLinks,
+    generateEpisodeAssets,
+    updateAssetLinks
+  } = useEpisodeAssetsGeneration();
+
+  const {
+    isPublishing,
+    publishToPodbean
+  } = usePodbeanPublishing();
 
   const {
     register,
@@ -415,6 +441,21 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
     setIsApprovalDialogOpen(false);
   };
 
+  // Handler for generating text files
+  const handleGenerateTextFiles = async () => {
+    await generateTextFiles(currentEpisodeId.current, currentEpisodeName.current);
+  };
+
+  // Handler for generating episode assets
+  const handleGenerateEpisodeAssets = async () => {
+    await generateEpisodeAssets(currentEpisodeId.current, currentEpisodeName.current);
+  };
+
+  // Handler for publishing to Podbean
+  const handlePublishToPodbean = async (publishData: any) => {
+    await publishToPodbean(currentEpisodeId.current, currentEpisodeName.current, publishData);
+  };
+
   // Check if an episode is selected
   const isEpisodeSelected = selectedEpisodeName !== null && selectedEpisodeName !== undefined && selectedEpisodeName.trim() !== '';
 
@@ -492,6 +533,28 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
           isScriptGenerated={isScriptGenerated}
         />
       </div>
+
+      {/* Text Files Section */}
+      <TextFilesSection
+        textFilesStatus={textFilesStatus}
+        isScriptGenerated={isScriptGenerated}
+        onGenerateTextFiles={handleGenerateTextFiles}
+        textFileLinks={textFileLinks}
+      />
+
+      {/* Episode Assets Section */}
+      <EpisodeAssetsSection
+        podcastStatus={podcastStatus}
+        isScriptGenerated={isScriptGenerated}
+        onGenerateAssets={handleGenerateEpisodeAssets}
+        assetLinks={assetLinks}
+      />
+
+      {/* Podbean Publishing Section */}
+      <PodbeanPublishingSection
+        podcastStatus={podcastStatus}
+        onPublishToPodbean={handlePublishToPodbean}
+      />
 
       {/* Script Approval Dialog */}
       <ScriptApprovalDialog 
