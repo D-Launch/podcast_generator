@@ -19,7 +19,6 @@ import { ProcessingStatusBanner } from "@/components/ProcessingStatusBanner";
 import { EpisodeNameInput } from "@/components/EpisodeNameInput";
 import { PdfFileUpload } from "@/components/PdfFileUpload";
 import { ScriptStatusDisplay } from "@/components/ScriptStatusDisplay";
-import { RefreshButton } from "@/components/RefreshButton";
 import { ScriptLinksList } from "@/components/ScriptLinksList";
 import { AudioGenerationButton } from "@/components/AudioGenerationButton";
 
@@ -113,19 +112,40 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
     }
   });
 
-  // Set up automatic refreshing of episodes list every second
+  // Set up automatic refreshing of episodes list and script links every second
   useEffect(() => {
     // Start the refresh interval
     const refreshInterval = window.setInterval(() => {
       // Dispatch a custom event to trigger refresh in EpisodesList component
       window.dispatchEvent(new CustomEvent('episodes-list-auto-refresh'));
+      
+      // Auto-refresh script links if we have an episode name
+      if (currentEpisodeName.current) {
+        refreshScriptLinks(currentEpisodeName.current).then(result => {
+          if (result?.success && result.data) {
+            // Update script status if available
+            if (result.data.episode_interview_script_status) {
+              setScriptStatus(result.data.episode_interview_script_status === "Approved" ? "Approved" : "Pending");
+            }
+            
+            // Update new status fields
+            if (result.data.episode_text_files_status) {
+              setTextFilesStatus(result.data.episode_text_files_status);
+            }
+            
+            if (result.data.podcast_status) {
+              setPodcastStatus(result.data.podcast_status);
+            }
+          }
+        });
+      }
     }, 1000); // Refresh every second
     
     // Cleanup on unmount
     return () => {
       window.clearInterval(refreshInterval);
     };
-  }, []);
+  }, [refreshScriptLinks, setScriptStatus, setTextFilesStatus, setPodcastStatus, currentEpisodeName]);
 
   // Clean up intervals when component unmounts or submission state changes
   useEffect(() => {
@@ -395,41 +415,6 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
     setIsApprovalDialogOpen(false);
   };
 
-  // Function to handle refreshing script links
-  const handleRefreshScriptLinks = async () => {
-    const result = await refreshScriptLinks(currentEpisodeName.current);
-    
-    if (result?.success) {
-      if (result.data) {
-        // Update script status if available
-        if (result.data.episode_interview_script_status) {
-          setScriptStatus(result.data.episode_interview_script_status === "Approved" ? "Approved" : "Pending");
-        }
-        
-        // Update new status fields
-        if (result.data.episode_text_files_status) {
-          setTextFilesStatus(result.data.episode_text_files_status);
-        }
-        
-        if (result.data.podcast_status) {
-          setPodcastStatus(result.data.podcast_status);
-        }
-      }
-      
-      toast({
-        title: "Scripts Refreshed",
-        description: "Script links have been refreshed.",
-        variant: "default",
-      });
-    } else {
-      toast({
-        title: "Refresh Error",
-        description: "Failed to refresh script links.",
-        variant: "destructive",
-      });
-    }
-  };
-
   // Check if an episode is selected
   const isEpisodeSelected = selectedEpisodeName !== null && selectedEpisodeName !== undefined && selectedEpisodeName.trim() !== '';
 
@@ -491,15 +476,8 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
       <div className="mt-8 space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white">Scripts and Audio</h3>
-          <div className="flex items-center space-x-2">
-            {/* Refresh Button */}
-            <RefreshButton
-              onClick={handleRefreshScriptLinks}
-              isRefreshing={isRefreshing}
-              disabled={!currentEpisodeName.current}
-            />
-            
-            {/* Script Status Display */}
+          <div className="flex items-center">
+            {/* Script Status Display - Removed Refresh Button */}
             <ScriptStatusDisplay
               scriptStatus={scriptStatus}
               textFilesStatus={textFilesStatus}
