@@ -3,7 +3,8 @@ import { PodcastForm } from "@/components/podcast-form-refactored";
 import { EpisodesList } from "@/components/episodes-list";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { FileText, List } from "lucide-react";
+import { FileText, List, BarChart } from "lucide-react";
+import { StatusSection } from "@/components/StatusSection";
 
 // Define the interface for script links
 interface ScriptLinks {
@@ -14,6 +15,8 @@ interface ScriptLinks {
   episode_interview_full_script: string | null;
   episode_interview_file: string | null;
   episode_interview_script_status?: string;
+  episode_text_files_status?: string;
+  podcast_status?: string;
 }
 
 function App() {
@@ -61,9 +64,10 @@ function App() {
 
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Form Section */}
-            <div className="bg-card shadow rounded-lg p-6 md:p-8">
+          {/* First Row - Podcast Generator and Status Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            {/* Podcast Generator Section - Takes 2/3 of the width */}
+            <div className="lg:col-span-2 bg-card shadow rounded-lg p-6 md:p-8">
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-foreground">
                   Podcast Generator
@@ -79,21 +83,39 @@ function App() {
               />
             </div>
 
-            {/* Episodes List Section */}
+            {/* Status Section - Takes 1/3 of the width */}
             <div className="bg-card shadow rounded-lg p-6 md:p-8">
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-foreground flex items-center">
-                  <List className="w-5 h-5 mr-2" />
-                  Episodes List
+                  <BarChart className="w-5 h-5 mr-2" />
+                  Status Dashboard
                 </h2>
                 <p className="mt-2 text-muted-foreground">
-                  View all your podcast episodes and their generated scripts.
+                  Track the progress of your podcast creation workflow.
                 </p>
               </div>
 
-              <div className="overflow-y-auto max-h-[800px] pr-2">
-                <EpisodesList onRecordSelect={handleRecordSelect} />
-              </div>
+              <StatusSection 
+                scriptLinks={selectedScriptLinks}
+                episodeName={selectedEpisodeName}
+              />
+            </div>
+          </div>
+
+          {/* Second Row - Episodes List Section */}
+          <div className="bg-card shadow rounded-lg p-6 md:p-8">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-foreground flex items-center">
+                <List className="w-5 h-5 mr-2" />
+                Episodes List
+              </h2>
+              <p className="mt-2 text-muted-foreground">
+                View all your podcast episodes and their generated scripts.
+              </p>
+            </div>
+
+            <div className="overflow-y-auto max-h-[600px] pr-2">
+              <EpisodesList onRecordSelect={handleRecordSelect} />
             </div>
           </div>
         </div>

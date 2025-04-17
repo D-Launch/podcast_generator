@@ -78,18 +78,13 @@ export function PodbeanPublishingSection({
     <div className="mt-8 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white">Podbean Publishing</h3>
-        {podcastStatus && (
-          <div className="flex items-center">
-            <span className="text-sm font-medium mr-2 text-gray-900 dark:text-white">Status:</span>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              podcastStatus === "Ready to Publish" 
-                ? "bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100"
-                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
-            }`}>
-              {podcastStatus}
-            </span>
-          </div>
-        )}
+        <Button 
+          onClick={handlePublish}
+          disabled={!canPublish}
+          size="sm"
+        >
+          Publish to Podbean
+        </Button>
       </div>
 
       <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
@@ -160,17 +155,6 @@ export function PodbeanPublishingSection({
               readOnly
               className="w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
             />
-          </div>
-
-          {/* Publish Button */}
-          <div className="flex items-end">
-            <Button 
-              onClick={handlePublish}
-              disabled={!canPublish}
-              className="w-full"
-            >
-              Publish to Podbean
-            </Button>
           </div>
         </div>
       </div>

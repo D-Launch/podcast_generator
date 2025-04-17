@@ -21,7 +21,6 @@ import { EpisodeHeader } from "@/components/EpisodeHeader";
 import { ProcessingStatusBanner } from "@/components/ProcessingStatusBanner";
 import { EpisodeNameInput } from "@/components/EpisodeNameInput";
 import { PdfFileUpload } from "@/components/PdfFileUpload";
-import { ScriptStatusDisplay } from "@/components/ScriptStatusDisplay";
 import { ScriptLinksList } from "@/components/ScriptLinksList";
 import { AudioGenerationButton } from "@/components/AudioGenerationButton";
 import { TextFilesSection } from "@/components/TextFilesSection";
@@ -49,8 +48,8 @@ interface ScriptLinks {
   episode_interview_full_script?: string | null;
   episode_interview_file?: string | null;
   episode_interview_script_status?: string;
-  episode_text_files_status?: string; // New column
-  podcast_status?: string; // New column
+  episode_text_files_status?: string;
+  podcast_status?: string;
 }
 
 interface PodcastFormProps {
@@ -517,14 +516,6 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
       <div className="mt-8 space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white">Scripts and Audio</h3>
-          <div className="flex items-center">
-            {/* Script Status Display - Removed Refresh Button */}
-            <ScriptStatusDisplay
-              scriptStatus={scriptStatus}
-              textFilesStatus={textFilesStatus}
-              podcastStatus={podcastStatus}
-            />
-          </div>
         </div>
 
         {/* Script Links List */}
