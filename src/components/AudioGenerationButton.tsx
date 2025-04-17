@@ -16,7 +16,7 @@ export function AudioGenerationButton({
   return (
     <Button 
       onClick={onClick}
-      className="w-full"
+      className="flex-1"
       variant={scriptStatus === "Approved" ? "outline" : "default"}
       disabled={scriptStatus === "Approved" || !isScriptGenerated || !hasScript4}
       title={!hasScript4 ? "Script #4 - Summary is required for approval" : ""}
@@ -24,7 +24,7 @@ export function AudioGenerationButton({
       {scriptStatus === "Approved" 
         ? "Audio Generation In Progress" 
         : !hasScript4 && isScriptGenerated
-          ? "Script #4 Required for Audio Generation"
+          ? "Script #4 Required"
           : "Generate Audio"}
     </Button>
   );

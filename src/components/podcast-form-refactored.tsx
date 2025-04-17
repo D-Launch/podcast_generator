@@ -157,6 +157,15 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
     }
   }, [scriptLinks, isSubmitting, hasScript1, hasScript4, updateProcessingStatus, setIsSubmitting]);
 
+  // Update form when selectedScriptLinks changes
+  useEffect(() => {
+    if (selectedEpisodeName && selectedEpisodeName.trim() !== '') {
+      setValue("episodeName", selectedEpisodeName);
+    } else {
+      setValue("episodeName", "");
+    }
+  }, [selectedEpisodeName, setValue]);
+
   // Set up subscription to listen for changes in the autoworkflow table
   useEffect(() => {
     // Subscribe to INSERT events
@@ -306,15 +315,6 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
     };
   }, [isSubmitting, toast, currentEpisodeName, setScriptLinks, setIsScriptGenerated, setScriptStatus, setTextFilesStatus, setPodcastStatus, setIsSubmitting]);
 
-  // Update form when selectedScriptLinks changes
-  useEffect(() => {
-    if (selectedEpisodeName && selectedEpisodeName.trim() !== '') {
-      setValue("episodeName", selectedEpisodeName);
-    } else {
-      setValue("episodeName", "");
-    }
-  }, [selectedEpisodeName, setValue]);
-
   // Function to clear the PDF file
   const clearPdfFile = () => {
     console.log("Clearing PDF file");
@@ -459,21 +459,32 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
           disabled={isEpisodeSelected}
         />
         
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isSubmitting || isEpisodeSelected}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating Script...
-            </>
-          ) : (
-            "Generate Script"
-          )}
-        </Button>
+        {/* Buttons Container */}
+        <div className="flex gap-4">
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="flex-1"
+            disabled={isSubmitting || isEpisodeSelected}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Script...
+              </>
+            ) : (
+              "Generate Script"
+            )}
+          </Button>
+          
+          {/* Audio Generation Button - Moved here from below */}
+          <AudioGenerationButton
+            scriptStatus={scriptStatus}
+            isScriptGenerated={isScriptGenerated}
+            hasScript4={hasScript4}
+            onClick={handleApproveScripts}
+          />
+        </div>
       </form>
 
       {/* Scripts and Audio Section */}
@@ -501,14 +512,6 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
         <ScriptLinksList
           scriptLinks={scriptLinks}
           isScriptGenerated={isScriptGenerated}
-        />
-
-        {/* Audio Generation Button */}
-        <AudioGenerationButton
-          scriptStatus={scriptStatus}
-          isScriptGenerated={isScriptGenerated}
-          hasScript4={hasScript4}
-          onClick={handleApproveScripts}
         />
       </div>
 
