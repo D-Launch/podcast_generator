@@ -49,77 +49,27 @@ export function ScriptApprovalDialog({
     };
   }, []);
 
+  // Listen for script status updates
+  useEffect(() => {
+    const handleScriptStatusUpdate = () => {
+      if (episodeName) {
+        fetchLatestScriptLinks();
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('script-status-updated', handleScriptStatusUpdate);
+
+    // Clean up
+    return () => {
+      window.removeEventListener('script-status-updated', handleScriptStatusUpdate);
+    };
+  }, [episodeName]);
+
   // Effect to update script links when props change or when actively monitoring a file
   useEffect(() => {
     // If we have an episode name, set up real-time monitoring for this specific episode
     if (episodeName) {
-      const fetchLatestScriptLinks = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('autoworkflow')
-            .select('episode_interview_script_1, episode_interview_script_2, episode_interview_script_3, episode_interview_script_4, episode_interview_full_script, episode_interview_file, episode_interview_script_status, episode_text_files_status, podcast_status')
-            .eq('episode_interview_file_name', episodeName)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching latest script links:', error);
-            return;
-          }
-          
-          if (data) {
-            // Only update if there's actual data to update with
-            setCurrentScriptLinks(prevLinks => {
-              // Create a new object with updated values
-              const updatedLinks = { ...prevLinks };
-              
-              // Update each script link only if it exists in the data
-              if (data.episode_interview_script_1 !== null) {
-                updatedLinks.episode_interview_script_1 = data.episode_interview_script_1;
-              }
-              
-              if (data.episode_interview_script_2 !== null) {
-                updatedLinks.episode_interview_script_2 = data.episode_interview_script_2;
-              }
-              
-              if (data.episode_interview_script_3 !== null) {
-                updatedLinks.episode_interview_script_3 = data.episode_interview_script_3;
-              }
-              
-              if (data.episode_interview_script_4 !== null) {
-                updatedLinks.episode_interview_script_4 = data.episode_interview_script_4;
-              }
-              
-              if (data.episode_interview_full_script !== null) {
-                updatedLinks.episode_interview_full_script = data.episode_interview_full_script;
-              }
-              
-              if (data.episode_interview_file !== null) {
-                updatedLinks.episode_interview_file = data.episode_interview_file;
-              }
-              
-              // Always update status if it exists
-              if (data.episode_interview_script_status) {
-                updatedLinks.episode_interview_script_status = data.episode_interview_script_status;
-              }
-              
-              // Update new status fields
-              if (data.episode_text_files_status) {
-                updatedLinks.episode_text_files_status = data.episode_text_files_status;
-              }
-              
-              if (data.podcast_status) {
-                updatedLinks.podcast_status = data.podcast_status;
-              }
-              
-              return updatedLinks;
-            });
-          }
-        } catch (err) {
-          console.error('Error in script links refresh:', err);
-        }
-      };
-      
-      // Initial fetch
       fetchLatestScriptLinks();
       
       // Set up interval to check for updates more frequently (every 500ms)
@@ -142,6 +92,87 @@ export function ScriptApprovalDialog({
       setCurrentScriptLinks(scriptLinks);
     }
   }, [scriptLinks, episodeName]);
+
+  // Function to fetch latest script links
+  const fetchLatestScriptLinks = async () => {
+    if (!episodeName) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('autoworkflow')
+        .select('episode_interview_script_1, episode_interview_script_2, episode_interview_script_3, episode_interview_script_4, episode_interview_full_script, episode_interview_file, episode_interview_script_status, episode_text_files_status, podcast_status')
+        .eq('episode_interview_file_name', episodeName)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching latest script links:', error);
+        return;
+      }
+      
+      if (data) {
+        console.log('Fetched latest script data:', data);
+        
+        // Only update if there's actual data to update with
+        setCurrentScriptLinks(prevLinks => {
+          // Create a new object with updated values
+          const updatedLinks = { ...prevLinks };
+          
+          // Update each script link only if it exists in the data
+          if (data.episode_interview_script_1 !== null) {
+            updatedLinks.episode_interview_script_1 = data.episode_interview_script_1;
+          }
+          
+          if (data.episode_interview_script_2 !== null) {
+            updatedLinks.episode_interview_script_2 = data.episode_interview_script_2;
+          }
+          
+          if (data.episode_interview_script_3 !== null) {
+            updatedLinks.episode_interview_script_3 = data.episode_interview_script_3;
+          }
+          
+          if (data.episode_interview_script_4 !== null) {
+            updatedLinks.episode_interview_script_4 = data.episode_interview_script_4;
+          }
+          
+          if (data.episode_interview_full_script !== null) {
+            updatedLinks.episode_interview_full_script = data.episode_interview_full_script;
+          }
+          
+          if (data.episode_interview_file !== null) {
+            updatedLinks.episode_interview_file = data.episode_interview_file;
+          }
+          
+          // Always update status if it exists
+          if (data.episode_interview_script_status) {
+            updatedLinks.episode_interview_script_status = data.episode_interview_script_status;
+          }
+          
+          // Update new status fields
+          if (data.episode_text_files_status) {
+            updatedLinks.episode_text_files_status = data.episode_text_files_status;
+          }
+          
+          if (data.podcast_status) {
+            updatedLinks.podcast_status = data.podcast_status;
+          }
+          
+          return updatedLinks;
+        });
+        
+        // Dispatch an event to notify components to refresh with the latest status
+        window.dispatchEvent(new CustomEvent('script-status-updated', { 
+          detail: { 
+            episodeName,
+            scriptStatus: data.episode_interview_script_status,
+            textFilesStatus: data.episode_text_files_status,
+            podcastStatus: data.podcast_status
+          } 
+        }));
+      }
+    } catch (err) {
+      console.error('Error in script links refresh:', err);
+    }
+  };
 
   // Helper function to render script links
   const renderScriptLink = (url: string | null, index: number) => {
@@ -173,6 +204,8 @@ export function ScriptApprovalDialog({
       badgeClass = "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-300";
     } else if (status === "Failed") {
       badgeClass = "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-300";
+    } else if (status === "Audio Generated") {
+      badgeClass = "bg-purple-100 text-purple-800 dark:bg-purple-700 dark:text-purple-300";
     }
     
     return (
@@ -219,8 +252,8 @@ export function ScriptApprovalDialog({
          !currentScriptLinks?.episode_interview_script_2 && 
          !currentScriptLinks?.episode_interview_script_3 && 
          !currentScriptLinks?.episode_interview_script_4 ? (
-          <div >
-
+          <div>
+            {/* Empty state */}
           </div>
         ) : (
           <div className="space-y-3">
@@ -252,6 +285,8 @@ export function ScriptApprovalDialog({
         <Button 
           className="w-full bg-blue-500 hover:bg-blue-600 text-white" 
           onClick={onApprove}
+          disabled={currentScriptLinks?.episode_interview_script_status === "Approved" || 
+                   currentScriptLinks?.episode_interview_script_status === "Audio Generated"}
         >
           Generate Audio
         </Button>

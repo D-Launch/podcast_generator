@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-export type ScriptStatus = "Pending" | "Approved";
+export type ScriptStatus = "Pending" | "Approved" | "Audio Generated";
 export type ProcessStatus = "Pending" | "Processing" | "Completed" | "Failed" | null;
 
 interface ScriptStatusProps {
@@ -16,7 +16,7 @@ export function useScriptStatus({
   initialPodcastStatus
 }: ScriptStatusProps = {}) {
   const [scriptStatus, setScriptStatus] = useState<ScriptStatus>(
-    initialScriptStatus === "Approved" ? "Approved" : "Pending"
+    getScriptStatusFromString(initialScriptStatus)
   );
   const [textFilesStatus, setTextFilesStatus] = useState<ProcessStatus>(
     initialTextFilesStatus as ProcessStatus || null
@@ -26,10 +26,18 @@ export function useScriptStatus({
   );
   const [processingStatus, setProcessingStatus] = useState<string | null>(null);
 
+  // Helper function to convert string to ScriptStatus type
+  function getScriptStatusFromString(status?: string): ScriptStatus {
+    if (status === "Approved") return "Approved";
+    if (status === "Audio Generated") return "Audio Generated";
+    return "Pending";
+  }
+
   // Update status when props change
   useEffect(() => {
     if (initialScriptStatus) {
-      setScriptStatus(initialScriptStatus === "Approved" ? "Approved" : "Pending");
+      console.log("Updating script status from props:", initialScriptStatus);
+      setScriptStatus(getScriptStatusFromString(initialScriptStatus));
     }
     
     if (initialTextFilesStatus) {
@@ -43,9 +51,34 @@ export function useScriptStatus({
 
   // Function to approve scripts
   const approveScripts = async (episodeId: string | null) => {
-    if (!episodeId) return { success: false, error: "No episode ID provided" };
+    if (!episodeId) {
+      console.error("Cannot approve scripts: No episode ID provided");
+      return { success: false, error: "No episode ID provided" };
+    }
     
     try {
+      console.log("Approving scripts for episode ID:", episodeId);
+      
+      // First, check if the episode exists
+      const { data: episodeData, error: episodeError } = await supabase
+        .from('autoworkflow')
+        .select('id, episode_interview_script_status')
+        .eq('id', episodeId)
+        .single();
+      
+      if (episodeError) {
+        console.error('Error fetching episode:', episodeError);
+        return { success: false, error: episodeError };
+      }
+      
+      if (!episodeData) {
+        console.error('Episode not found with ID:', episodeId);
+        return { success: false, error: "Episode not found" };
+      }
+      
+      console.log("Found episode:", episodeData);
+      
+      // Now update the status
       const { error } = await supabase
         .from('autoworkflow')
         .update({ 
@@ -60,10 +93,22 @@ export function useScriptStatus({
         return { success: false, error };
       }
       
+      console.log("Successfully updated script status to Approved");
+      
       // Update local state
       setScriptStatus("Approved");
       setTextFilesStatus("Pending");
       setPodcastStatus("Pending");
+      
+      // Dispatch an event to notify components to refresh
+      window.dispatchEvent(new CustomEvent('script-status-updated', { 
+        detail: { 
+          episodeId,
+          scriptStatus: "Approved",
+          textFilesStatus: "Pending",
+          podcastStatus: "Pending"
+        } 
+      }));
       
       return { success: true };
     } catch (err) {

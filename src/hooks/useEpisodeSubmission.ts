@@ -8,7 +8,7 @@ const MAX_WAIT_TIME = 2 * 60 * 1000;
 
 export interface FormValues {
   episodeName: string;
-  pdfFile: File;
+  pdfFile: File | null;
 }
 
 export function useEpisodeSubmission() {
@@ -249,6 +249,22 @@ export function useEpisodeSubmission() {
   // Submit form data to webhook
   const submitFormData = async (data: FormValues, onSuccess: (scriptLinks: ScriptLinks) => void) => {
     console.log("Form submitted");
+    
+    // Validate PDF file
+    if (!data.pdfFile || !(data.pdfFile instanceof File)) {
+      console.error("Invalid PDF file:", data.pdfFile);
+      setLastError("Error: PDF file is not valid");
+      setDetailedError("The provided PDF file is not a valid File object");
+      
+      toast({
+        title: "Invalid File",
+        description: "The PDF file is not valid. Please select a valid PDF file.",
+        variant: "destructive",
+      });
+      
+      return { success: false, error: "Invalid PDF file" };
+    }
+    
     lastSubmittedData.current = data;
     
     // Store the current episode name for notifications
@@ -452,6 +468,49 @@ export function useEpisodeSubmission() {
     }
   };
 
+  // Function to approve scripts without requiring a PDF file
+  const approveScriptsWithoutFile = async (episodeId: string | null) => {
+    if (!episodeId) {
+      console.error("Cannot approve scripts: No episode ID provided");
+      return { success: false, error: "No episode ID provided" };
+    }
+    
+    try {
+      console.log("Approving scripts for episode ID:", episodeId);
+      
+      const { error } = await supabase
+        .from('autoworkflow')
+        .update({ 
+          episode_interview_script_status: "Approved",
+          episode_text_files_status: "Pending", // Set initial status for text files
+          podcast_status: "Pending" // Set initial status for podcast
+        })
+        .eq('id', episodeId);
+      
+      if (error) {
+        console.error('Error updating script status:', error);
+        return { success: false, error };
+      }
+      
+      console.log("Successfully updated script status to Approved");
+      
+      // Dispatch an event to notify components to refresh
+      window.dispatchEvent(new CustomEvent('script-status-updated', { 
+        detail: { 
+          episodeId,
+          scriptStatus: "Approved",
+          textFilesStatus: "Pending",
+          podcastStatus: "Pending"
+        } 
+      }));
+      
+      return { success: true };
+    } catch (err) {
+      console.error('Error approving scripts:', err);
+      return { success: false, error: err };
+    }
+  };
+
   return {
     isSubmitting,
     setIsSubmitting,
@@ -466,6 +525,7 @@ export function useEpisodeSubmission() {
     submitFormData,
     checkForNewRow,
     processWebhookResponse,
-    cleanupResources
+    cleanupResources,
+    approveScriptsWithoutFile // New function to approve scripts without requiring a file
   };
 }
