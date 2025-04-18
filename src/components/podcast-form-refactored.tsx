@@ -15,6 +15,7 @@ import { useEpisodeSubmission, FormValues } from "@/hooks/useEpisodeSubmission";
 import { useTextFilesGeneration } from "@/hooks/useTextFilesGeneration";
 import { useEpisodeAssetsGeneration } from "@/hooks/useEpisodeAssetsGeneration";
 import { usePodbeanPublishing } from "@/hooks/usePodbeanPublishing";
+import { useAudioGeneration } from "@/hooks/useAudioGeneration";
 
 // Import components
 import { EpisodeHeader } from "@/components/EpisodeHeader";
@@ -61,6 +62,7 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
+  const [episodeDbId, setEpisodeDbId] = useState<string | null>(null);
   
   // File input reference
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -101,7 +103,8 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
     currentEpisodeId,
     shouldClearPdfFile,
     submitFormData,
-    cleanupResources
+    cleanupResources,
+    resetCurrentEpisodeId
   } = useEpisodeSubmission();
 
   // New hooks for the additional sections
@@ -125,6 +128,11 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
   } = usePodbeanPublishing();
 
   const {
+    isGeneratingAudio,
+    generateAudio
+  } = useAudioGeneration();
+
+  const {
     register,
     handleSubmit,
     formState: { errors },
@@ -136,6 +144,57 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
       episodeName: "",
     }
   });
+
+  // Reset currentEpisodeId when no episode is selected
+  useEffect(() => {
+    if (!selectedEpisodeName) {
+      console.log("No episode selected, resetting currentEpisodeId");
+      resetCurrentEpisodeId();
+      setEpisodeDbId(null);
+    }
+  }, [selectedEpisodeName, resetCurrentEpisodeId]);
+
+  // Fetch the database ID for the selected episode
+  useEffect(() => {
+    const fetchEpisodeDbId = async () => {
+      if (!selectedEpisodeName) {
+        setEpisodeDbId(null);
+        return;
+      }
+      
+      try {
+        console.log("PodcastForm: Fetching database ID for episode name:", selectedEpisodeName);
+        
+        const { data, error } = await supabase
+          .from('autoworkflow')
+          .select('id')
+          .eq('episode_interview_file_name', selectedEpisodeName)
+          .single();
+        
+        if (error) {
+          console.error("PodcastForm: Error fetching database ID:", error);
+          return;
+        }
+        
+        if (data) {
+          console.log("PodcastForm: Found database ID:", data.id);
+          setEpisodeDbId(data.id);
+          
+          // Also update the currentEpisodeId ref
+          if (currentEpisodeId.current !== data.id) {
+            console.log("PodcastForm: Updating currentEpisodeId from", currentEpisodeId.current, "to", data.id);
+            currentEpisodeId.current = data.id;
+          }
+        } else {
+          console.log("PodcastForm: No database record found for episode name:", selectedEpisodeName);
+        }
+      } catch (err) {
+        console.error("PodcastForm: Exception in fetchEpisodeDbId:", err);
+      }
+    };
+    
+    fetchEpisodeDbId();
+  }, [selectedEpisodeName, currentEpisodeId]);
 
   // Set up automatic refreshing of episodes list and script links every second
   useEffect(() => {
@@ -413,27 +472,129 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
   };
 
   const handleApproveScripts = () => {
-    setIsApprovalDialogOpen(true);
+    console.log("handleApproveScripts called");
+    console.log("Current episode ID:", currentEpisodeId.current);
+    console.log("Database ID:", episodeDbId);
+    console.log("Episode Name:", selectedEpisodeName);
+    
+    // Use the database ID if available, otherwise fall back to currentEpisodeId
+    const idToUse = episodeDbId || currentEpisodeId.current;
+    
+    if (!idToUse && selectedEpisodeName) {
+      // If we don't have an ID but have the episode name, try to fetch the ID first
+      console.log("No ID available, attempting to fetch from database before opening dialog");
+      
+      supabase
+        .from('autoworkflow')
+        .select('id')
+        .eq('episode_interview_file_name', selectedEpisodeName)
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Error fetching episode ID:", error);
+            toast({
+              title: "Error",
+              description: "Could not find episode ID in database",
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          if (data) {
+            console.log("Successfully fetched ID:", data.id);
+            setEpisodeDbId(data.id);
+            currentEpisodeId.current = data.id;
+            setIsApprovalDialogOpen(true);
+          } else {
+            console.error("No episode found with name:", selectedEpisodeName);
+            toast({
+              title: "Error",
+              description: "Episode not found in database",
+              variant: "destructive",
+            });
+          }
+        });
+    } else if (!idToUse && !selectedEpisodeName) {
+      // No ID and no episode name
+      console.error("Cannot approve scripts: No episode selected");
+      toast({
+        title: "Error",
+        description: "Please select an episode first",
+        variant: "destructive",
+      });
+    } else {
+      // We have an ID, proceed with opening the dialog
+      setIsApprovalDialogOpen(true);
+    }
   };
 
   const confirmApproval = async () => {
-    const result = await approveScripts(currentEpisodeId.current);
+    console.log("confirmApproval called");
     
-    if (!result.success) {
+    // Use the database ID if available, otherwise fall back to currentEpisodeId
+    const idToUse = episodeDbId || currentEpisodeId.current;
+    
+    console.log("Using ID for approval:", idToUse);
+    
+    if (!idToUse) {
+      console.error("No episode ID available for approval");
       toast({
-        title: "Update Error",
-        description: "Failed to update script status in the database, but marked as approved locally.",
+        title: "Error",
+        description: "No episode ID available",
         variant: "destructive",
       });
+      setIsApprovalDialogOpen(false);
+      return;
     }
     
-    setIsApprovalDialogOpen(false);
-    
-    toast({
-      title: "Scripts Approved",
-      description: "All scripts have been successfully approved. Audio generation has started.",
-      variant: "default",
-    });
+    try {
+      // First approve the scripts in the database
+      const result = await approveScripts(idToUse);
+      
+      if (!result.success) {
+        console.error("Failed to approve scripts:", result.error);
+        toast({
+          title: "Update Error",
+          description: "Failed to update script status in the database.",
+          variant: "destructive",
+        });
+        setIsApprovalDialogOpen(false);
+        return;
+      }
+      
+      console.log("Scripts approved successfully, now generating audio");
+      
+      // Then send the data to the webhook
+      const audioResult = await generateAudio({
+        id: idToUse,
+        episodeName: selectedEpisodeName || "",
+        scriptLinks: scriptLinks
+      });
+      
+      if (!audioResult.success) {
+        console.error("Failed to generate audio");
+        toast({
+          title: "Error",
+          description: "Failed to start audio generation process.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Scripts Approved",
+          description: "All scripts have been successfully approved. Audio generation has started.",
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      console.error("Error in approval process:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during the approval process.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsApprovalDialogOpen(false);
+    }
   };
 
   const cancelApproval = () => {
@@ -442,21 +603,70 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
 
   // Handler for generating text files
   const handleGenerateTextFiles = async () => {
-    await generateTextFiles(currentEpisodeId.current, currentEpisodeName.current);
+    // Use the database ID if available, otherwise fall back to currentEpisodeId
+    const idToUse = episodeDbId || currentEpisodeId.current;
+    
+    if (!idToUse) {
+      console.error("No episode ID available for generating text files");
+      toast({
+        title: "Error",
+        description: "No episode ID available",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    await generateTextFiles(idToUse, selectedEpisodeName || "");
   };
 
   // Handler for generating episode assets
   const handleGenerateEpisodeAssets = async () => {
-    await generateEpisodeAssets(currentEpisodeId.current, currentEpisodeName.current);
+    // Use the database ID if available, otherwise fall back to currentEpisodeId
+    const idToUse = episodeDbId || currentEpisodeId.current;
+    
+    if (!idToUse) {
+      console.error("No episode ID available for generating assets");
+      toast({
+        title: "Error",
+        description: "No episode ID available",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    await generateEpisodeAssets(idToUse, selectedEpisodeName || "");
   };
 
   // Handler for publishing to Podbean
   const handlePublishToPodbean = async (publishData: any) => {
-    await publishToPodbean(currentEpisodeId.current, currentEpisodeName.current, publishData);
+    // Use the database ID if available, otherwise fall back to currentEpisodeId
+    const idToUse = episodeDbId || currentEpisodeId.current;
+    
+    if (!idToUse) {
+      console.error("No episode ID available for publishing to Podbean");
+      toast({
+        title: "Error",
+        description: "No episode ID available",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    await publishToPodbean(idToUse, selectedEpisodeName || "", publishData);
   };
 
   // Check if an episode is selected
   const isEpisodeSelected = selectedEpisodeName !== null && selectedEpisodeName !== undefined && selectedEpisodeName.trim() !== '';
+
+  // Debug info
+  console.log("PodcastForm render with:", {
+    selectedEpisodeName,
+    episodeDbId,
+    currentEpisodeId: currentEpisodeId.current,
+    scriptStatus,
+    isScriptGenerated,
+    hasScript4
+  });
 
   return (
     <>
@@ -465,6 +675,15 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
 
       {/* Processing Status Banner */}
       <ProcessingStatusBanner status={processingStatus} />
+
+      {/* Debug Info - Remove in production */}
+      <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 text-xs rounded">
+        <div>Episode Name: {selectedEpisodeName || 'null'}</div>
+        <div>Database ID: {episodeDbId || 'null'}</div>
+        <div>Current Episode ID: {currentEpisodeId.current || 'null'}</div>
+        <div>Script Status: {scriptStatus}</div>
+        <div>Has Script 4: {hasScript4 ? 'Yes' : 'No'}</div>
+      </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -502,12 +721,14 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
             )}
           </Button>
           
-          {/* Audio Generation Button - Moved here from below */}
+          {/* Audio Generation Button - Pass the episode name */}
           <AudioGenerationButton
             scriptStatus={scriptStatus}
             isScriptGenerated={isScriptGenerated}
             hasScript4={hasScript4}
             onClick={handleApproveScripts}
+            isGeneratingAudio={isGeneratingAudio}
+            episodeName={selectedEpisodeName}
           />
         </div>
       </form>

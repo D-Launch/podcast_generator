@@ -511,6 +511,13 @@ export function useEpisodeSubmission() {
     }
   };
 
+  // Reset current episode ID
+  const resetCurrentEpisodeId = () => {
+    console.log("Resetting currentEpisodeId from", currentEpisodeId.current, "to null");
+    currentEpisodeId.current = null;
+    currentEpisodeName.current = null;
+  };
+
   return {
     isSubmitting,
     setIsSubmitting,
@@ -526,6 +533,7 @@ export function useEpisodeSubmission() {
     checkForNewRow,
     processWebhookResponse,
     cleanupResources,
-    approveScriptsWithoutFile // New function to approve scripts without requiring a file
+    approveScriptsWithoutFile,
+    resetCurrentEpisodeId // New function to reset the current episode ID
   };
 }

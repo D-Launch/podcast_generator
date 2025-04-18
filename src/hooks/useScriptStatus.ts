@@ -73,7 +73,55 @@ export function useScriptStatus({
       
       if (!episodeData) {
         console.error('Episode not found with ID:', episodeId);
-        return { success: false, error: "Episode not found" };
+        
+        // Try to find by episode name if ID lookup fails
+        console.log("Attempting to find episode by name...");
+        const { data: nameData, error: nameError } = await supabase
+          .from('autoworkflow')
+          .select('id')
+          .eq('episode_interview_file_name', episodeId)
+          .single();
+          
+        if (nameError || !nameData) {
+          console.error('Episode not found by name either:', episodeId);
+          return { success: false, error: "Episode not found" };
+        }
+        
+        console.log("Found episode by name with ID:", nameData.id);
+        
+        // Now update using the found ID
+        const { error } = await supabase
+          .from('autoworkflow')
+          .update({ 
+            episode_interview_script_status: "Approved",
+            episode_text_files_status: "Pending",
+            podcast_status: "Pending"
+          })
+          .eq('id', nameData.id);
+        
+        if (error) {
+          console.error('Error updating script status:', error);
+          return { success: false, error };
+        }
+        
+        console.log("Successfully updated script status to Approved using name lookup");
+        
+        // Update local state
+        setScriptStatus("Approved");
+        setTextFilesStatus("Pending");
+        setPodcastStatus("Pending");
+        
+        // Dispatch an event to notify components to refresh
+        window.dispatchEvent(new CustomEvent('script-status-updated', { 
+          detail: { 
+            episodeId: nameData.id,
+            scriptStatus: "Approved",
+            textFilesStatus: "Pending",
+            podcastStatus: "Pending"
+          } 
+        }));
+        
+        return { success: true };
       }
       
       console.log("Found episode:", episodeData);
@@ -83,8 +131,8 @@ export function useScriptStatus({
         .from('autoworkflow')
         .update({ 
           episode_interview_script_status: "Approved",
-          episode_text_files_status: "Pending", // Set initial status for text files
-          podcast_status: "Pending" // Set initial status for podcast
+          episode_text_files_status: "Pending",
+          podcast_status: "Pending"
         })
         .eq('id', episodeId);
       
