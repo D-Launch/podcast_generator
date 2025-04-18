@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Loader2, AlertCircle, Edit, Trash2, Save, X, ExternalLink, Eye, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Loader2, AlertCircle, Edit, Trash2, Save, X, ExternalLink, Eye, ArrowUpDown, ArrowUp, ArrowDown, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -72,6 +72,14 @@ const PREDEFINED_COLUMN_ORDER = [
   'unix_timestamp',
   'publish_date',
   'publish_time'
+];
+
+// List of fields that cannot be manually edited
+const RESTRICTED_FIELDS = [
+  'created_at',
+  'episode_interview_script_status',
+  'episode_text_files_status',
+  'podcast_status'
 ];
 
 // Helper to check if a string is a valid URL
@@ -263,16 +271,28 @@ export function EpisodesList({ onRecordSelect }: EpisodesListProps) {
     if (!editedRecord) return;
     
     try {
+      // Create a copy of the edited record
+      const recordToUpdate = { ...editedRecord };
+      
+      // Remove restricted fields from the update
+      RESTRICTED_FIELDS.forEach(field => {
+        // If the original record has this field, restore its original value
+        const originalRecord = records.find(r => r.id === editedRecord.id);
+        if (originalRecord && originalRecord[field] !== undefined) {
+          recordToUpdate[field] = originalRecord[field];
+        }
+      });
+      
       const { error } = await supabase
         .from('autoworkflow')
-        .update(editedRecord)
-        .eq('id', editedRecord.id);
+        .update(recordToUpdate)
+        .eq('id', recordToUpdate.id);
       
       if (error) throw new Error(error.message);
       
       // Update local state
       setRecords(records.map(record => 
-        record.id === editedRecord.id ? editedRecord : record
+        record.id === recordToUpdate.id ? recordToUpdate : record
       ));
       
       setEditingId(null);
@@ -454,6 +474,11 @@ export function EpisodesList({ onRecordSelect }: EpisodesListProps) {
     return null;
   };
 
+  // Check if a field is restricted from editing
+  const isRestrictedField = (field: string): boolean => {
+    return RESTRICTED_FIELDS.includes(field);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -528,6 +553,9 @@ export function EpisodesList({ onRecordSelect }: EpisodesListProps) {
                 >
                   <div className="flex items-center">
                     {column}
+                    {isRestrictedField(column) && (
+                      <Lock className="h-3 w-3 ml-1 text-gray-400" />
+                    )}
                     {renderSortIndicator(column)}
                   </div>
                 </th>
@@ -603,12 +631,19 @@ export function EpisodesList({ onRecordSelect }: EpisodesListProps) {
                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 overflow-hidden text-ellipsis max-w-xs"
                   >
                     {editingId === record.id && editedRecord ? (
-                      <Input
-                        value={editedRecord[column] || ''}
-                        onChange={(e) => handleEditChange(column, e.target.value)}
-                        className="w-full"
-                        onClick={(e) => e.stopPropagation()} // Prevent row click when editing
-                      />
+                      isRestrictedField(column) ? (
+                        <div className="flex items-center">
+                          <span className="text-gray-500">{record[column] || ''}</span>
+                          <Lock className="h-3 w-3 ml-2 text-gray-400" title="This field cannot be edited manually" />
+                        </div>
+                      ) : (
+                        <Input
+                          value={editedRecord[column] || ''}
+                          onChange={(e) => handleEditChange(column, e.target.value)}
+                          className="w-full"
+                          onClick={(e) => e.stopPropagation()} // Prevent row click when editing
+                        />
+                      )
                     ) : (
                       <CellContent value={record[column]} column={column} />
                     )}
