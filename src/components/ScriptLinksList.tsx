@@ -48,11 +48,16 @@ export function ScriptLinksList({ scriptLinks, isScriptGenerated }: ScriptLinksL
                   rel="noopener noreferrer"
                   className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                  View or Update
+                  {/* Show "View Only" for Full Script and Interview File, "View or Update" for others */}
+                  {script.key === "episode_interview_full_script" || script.key === "episode_interview_file" 
+                    ? "View Only" 
+                    : "View or Update"}
                 </a>
               ) : (
                 <span className="text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
-                  View or Update
+                  {script.key === "episode_interview_full_script" || script.key === "episode_interview_file" 
+                    ? "View Only" 
+                    : "View or Update"}
                 </span>
               )}
             </div>

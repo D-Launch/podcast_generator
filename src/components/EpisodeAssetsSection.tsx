@@ -60,11 +60,11 @@ export function EpisodeAssetsSection({
                       rel="noopener noreferrer"
                       className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
                     >
-                      {asset.key.includes('audio') ? 'Play' : 'View or Update'}
+                      {asset.key.includes('audio') ? 'View Only' : 'View or Update'}
                     </a>
                   ) : (
                     <span className="text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
-                      {asset.key.includes('audio') ? 'Play' : 'View or Update'}
+                      {asset.key.includes('audio') ? 'View Only' : 'View or Update'}
                     </span>
                   )}
                 </div>
