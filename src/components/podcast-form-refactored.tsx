@@ -658,16 +658,6 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
   // Check if an episode is selected
   const isEpisodeSelected = selectedEpisodeName !== null && selectedEpisodeName !== undefined && selectedEpisodeName.trim() !== '';
 
-  // Debug info
-  console.log("PodcastForm render with:", {
-    selectedEpisodeName,
-    episodeDbId,
-    currentEpisodeId: currentEpisodeId.current,
-    scriptStatus,
-    isScriptGenerated,
-    hasScript4
-  });
-
   return (
     <>
       {/* Episode Header */}
@@ -676,14 +666,7 @@ export function PodcastForm({ selectedScriptLinks, selectedEpisodeName }: Podcas
       {/* Processing Status Banner */}
       <ProcessingStatusBanner status={processingStatus} />
 
-      {/* Debug Info - Remove in production */}
-      <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 text-xs rounded">
-        <div>Episode Name: {selectedEpisodeName || 'null'}</div>
-        <div>Database ID: {episodeDbId || 'null'}</div>
-        <div>Current Episode ID: {currentEpisodeId.current || 'null'}</div>
-        <div>Script Status: {scriptStatus}</div>
-        <div>Has Script 4: {hasScript4 ? 'Yes' : 'No'}</div>
-      </div>
+      {/* Debug Info section has been removed */}
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
