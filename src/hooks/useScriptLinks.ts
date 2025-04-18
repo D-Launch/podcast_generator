@@ -69,6 +69,12 @@ export function useScriptLinks(selectedScriptLinks?: Partial<ScriptLinks> | null
   // Check if Script #1 has a valid link
   const hasScript1 = isValidScriptLink(scriptLinks.episode_interview_script_1);
 
+  // Check if Full Script has a valid link
+  const hasFullScript = isValidScriptLink(scriptLinks.episode_interview_full_script);
+
+  // Check if Interview File has a valid link
+  const hasInterviewFile = isValidScriptLink(scriptLinks.episode_interview_file);
+
   // Function to refresh script links
   const refreshScriptLinks = async (episodeName: string | null) => {
     if (!episodeName) return;
@@ -134,6 +140,8 @@ export function useScriptLinks(selectedScriptLinks?: Partial<ScriptLinks> | null
     setIsScriptGenerated,
     hasScript1,
     hasScript4,
+    hasFullScript,
+    hasInterviewFile,
     isRefreshing,
     refreshScriptLinks
   };

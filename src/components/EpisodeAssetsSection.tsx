@@ -6,13 +6,17 @@ interface EpisodeAssetsProps {
   isScriptGenerated: boolean;
   onGenerateAssets: () => void;
   assetLinks: Record<string, string | null>;
+  fullScriptAvailable?: boolean;
+  interviewFileAvailable?: boolean;
 }
 
 export function EpisodeAssetsSection({ 
   podcastStatus, 
   isScriptGenerated,
   onGenerateAssets,
-  assetLinks = {}
+  assetLinks = {},
+  fullScriptAvailable = false,
+  interviewFileAvailable = false
 }: EpisodeAssetsProps) {
   const assetTypes = [
     { id: 1, name: "Show Notes", key: "show_notes", icon: FileText },
@@ -25,13 +29,16 @@ export function EpisodeAssetsSection({
     return link !== null && link !== undefined && link.trim() !== '';
   };
 
+  // Button should be disabled if either full script or interview file is not available
+  const isButtonDisabled = !isScriptGenerated || !fullScriptAvailable || !interviewFileAvailable;
+
   return (
     <div className="mt-8 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white">Episode Assets</h3>
         <Button 
           onClick={onGenerateAssets}
-          disabled={!isScriptGenerated}
+          disabled={isButtonDisabled}
           size="sm"
         >
           Generate Episode Assets

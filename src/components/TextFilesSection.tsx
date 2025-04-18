@@ -6,13 +6,17 @@ interface TextFilesProps {
   isScriptGenerated: boolean;
   onGenerateTextFiles: () => void;
   textFileLinks: Record<string, string | null>;
+  fullScriptAvailable?: boolean;
+  interviewFileAvailable?: boolean;
 }
 
 export function TextFilesSection({ 
   textFilesStatus, 
   isScriptGenerated,
   onGenerateTextFiles,
-  textFileLinks = {}
+  textFileLinks = {},
+  fullScriptAvailable = false,
+  interviewFileAvailable = false
 }: TextFilesProps) {
   const textFileTypes = [
     { id: 1, name: "Episode Titles", key: "episode_titles" },
@@ -28,13 +32,16 @@ export function TextFilesSection({
     return link !== null && link !== undefined && link.trim() !== '';
   };
 
+  // Button should be disabled if either full script or interview file is not available
+  const isButtonDisabled = !isScriptGenerated || !fullScriptAvailable || !interviewFileAvailable;
+
   return (
     <div className="mt-8 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white">Text Files</h3>
         <Button 
           onClick={onGenerateTextFiles}
-          disabled={!isScriptGenerated}
+          disabled={isButtonDisabled}
           size="sm"
         >
           Generate Text Files
