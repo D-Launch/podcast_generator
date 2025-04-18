@@ -63,28 +63,29 @@ function App() {
       </header>
 
       <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* First Row - Podcast Generator and Status Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            {/* Podcast Generator Section - Takes 2/3 of the width */}
-            <div className="lg:col-span-2 bg-card shadow rounded-lg p-6 md:p-8">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-foreground">
-                  Podcast Generator
-                </h2>
-                <p className="mt-2 text-muted-foreground">
-                  Elevate Your Content—Convert PDFs Into Podcasts With AI
-                </p>
-              </div>
-
-              <PodcastForm
-                selectedScriptLinks={selectedScriptLinks}
-                selectedEpisodeName={selectedEpisodeName}
-              />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Row 1: Podcast Generator */}
+          <div className="bg-card shadow rounded-lg p-6 mb-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-foreground flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Podcast Generator
+              </h2>
+              <p className="mt-2 text-muted-foreground">
+                Elevate Your Content—Convert PDFs Into Podcasts With AI
+              </p>
             </div>
 
-            {/* Status Section - Takes 1/3 of the width */}
-            <div className="bg-card shadow rounded-lg p-6 md:p-8">
+            <PodcastForm
+              selectedScriptLinks={selectedScriptLinks}
+              selectedEpisodeName={selectedEpisodeName}
+            />
+          </div>
+
+          {/* Row 2: Status Dashboard (30%) and Episodes List (70%) */}
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+            {/* Status Dashboard - 30% width on large screens */}
+            <div className="lg:col-span-3 bg-card shadow rounded-lg p-6">
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-foreground flex items-center">
                   <BarChart className="w-5 h-5 mr-2" />
@@ -100,28 +101,28 @@ function App() {
                 episodeName={selectedEpisodeName}
               />
             </div>
-          </div>
 
-          {/* Second Row - Episodes List Section */}
-          <div className="bg-card shadow rounded-lg p-6 md:p-8">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground flex items-center">
-                <List className="w-5 h-5 mr-2" />
-                Episodes List
-              </h2>
-              <p className="mt-2 text-muted-foreground">
-                View all your podcast episodes and their generated scripts.
-              </p>
-            </div>
+            {/* Episodes List - 70% width on large screens */}
+            <div className="lg:col-span-7 bg-card shadow rounded-lg p-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-foreground flex items-center">
+                  <List className="w-5 h-5 mr-2" />
+                  Episodes List
+                </h2>
+                <p className="mt-2 text-muted-foreground">
+                  View all your podcast episodes and their generated scripts.
+                </p>
+              </div>
 
-            <div className="overflow-y-auto max-h-[600px] pr-2">
-              <EpisodesList onRecordSelect={handleRecordSelect} />
+              <div className="overflow-y-auto max-h-[600px] pr-2">
+                <EpisodesList onRecordSelect={handleRecordSelect} />
+              </div>
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="bg-card shadow">
+      <footer className="bg-card shadow mt-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-sm text-muted-foreground">
             © {new Date().getFullYear()} Marketing Execution Podcast. All rights
