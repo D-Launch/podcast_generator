@@ -372,7 +372,7 @@ export function useEpisodeSubmission() {
     // Send the webhook request
     try {
       // Webhook URL
-      const webhookUrl = "https://d-launch.app.n8n.cloud/webhook-test/a662a23d-ca8c-499c-8524-a1292fb55950";
+      const webhookUrl = "https://d-launch.app.n8n.cloud/webhook/a662a23d-ca8c-499c-8524-a1292fb55950";
       
       // Use fetch with proper headers for binary file upload
       const response = await fetch(webhookUrl, {

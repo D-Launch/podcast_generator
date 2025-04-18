@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
 // Webhook URL for audio generation
-const AUDIO_GENERATION_WEBHOOK_URL = "https://d-launch.app.n8n.cloud/webhook-test/c00dee64-b11f-4fdc-9111-786b414229d5";
+const AUDIO_GENERATION_WEBHOOK_URL = "https://d-launch.app.n8n.cloud/webhook/c00dee64-b11f-4fdc-9111-786b414229d5";
 
 export function useAudioGeneration() {
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
